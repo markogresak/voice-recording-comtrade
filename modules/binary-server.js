@@ -18,17 +18,21 @@ binaryServer.on('connection', function(client) {
    *
    * @type {wav}
    */
-  var fileWriter = new wav.FileWriter(fm.nextFilePath('sound', 'wav'), {
+  var filePath = fm.nextFilePath('sound', 'wav');
+  var fileWriter = new wav.FileWriter(filePath, {
     channels: 1,
     sampleRate: 48000,
     bitDepth: 16
   });
 
   client.on('stream', function(stream) {
+    console.log('new stream: ' + filePath);
+
     stream.pipe(fileWriter);
 
     stream.on('end', function() {
       fileWriter.end();
+      console.log('--- end stream: ' + filePath);
     });
   });
 });
