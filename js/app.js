@@ -14,6 +14,16 @@
                                 navigator.msGetUserMedia;
     }
 
+    function convertoFloat32ToInt16(buffer) {
+      var l = buffer.length;
+      var buf = new Int16Array(l);
+
+      while (l--) {
+        buf[l] = buffer[l] * 0xFFFF; //convert to 16 bit
+      }
+      return buf.buffer;
+    }
+
     function success(e) {
       var AudioContext = window.AudioContext || window.webkitAudioContext;
       var context = new AudioContext();
@@ -22,7 +32,7 @@
       var audioInput = context.createMediaStreamSource(e);
 
       var bufferSize = 2048;
-      var recorder = context.createJavaScriptNode(bufferSize, 1, 1);
+      var recorder = context.createScriptProcessor(bufferSize, 1, 1);
 
       recorder.onaudioprocess = function(e) {
         if (!recording) {
@@ -57,17 +67,5 @@
       recording = false;
       window.Stream.end();
     };
-
-
-
-    function convertoFloat32ToInt16(buffer) {
-      var l = buffer.length;
-      var buf = new Int16Array(l);
-
-      while (l--) {
-        buf[l] = buffer[l] * 0xFFFF; //convert to 16 bit
-      }
-      return buf.buffer;
-    }
   });
 })(this);
