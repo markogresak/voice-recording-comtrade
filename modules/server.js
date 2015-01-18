@@ -23,7 +23,7 @@ if(!sslConfig || !sslConfig.key || !sslConfig.cert) {
 // Read SSL files using values from config.
 var sslOptions = {
   key: fs.readFileSync(sslConfig.key),
-  cert: fs.readFileSync(sslConfig.cert),
+  cert: fs.readFileSync(sslConfig.cert)
 };
 
 https.createServer(sslOptions, app)
