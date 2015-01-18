@@ -186,7 +186,14 @@
   }());
 
   var soundRecorderInstance = null;
-  window.startRecording = function() {
+
+  /**
+   * Function used to create new recorder instance,
+   * start recording and storing data to the server.
+   *
+   * @type {Function}
+   */
+  var startRecordingFunction = function() {
     // Create new instance and start only if it doesn't already exist.
     if(!soundRecorderInstance) {
       soundRecorderInstance = Object.create(SoundRecorder);
@@ -194,11 +201,22 @@
     }
   };
 
-  window.stopRecording = function() {
+  /**
+   * Function used to stop recording, finalize
+   * the server stream and destroy object.
+   *
+   * @type {Function}
+   */
+  var stopRecordingFunction = function() {
     // Stop recording and delete instance only if it exists.
     if(soundRecorderInstance) {
       soundRecorderInstance.stop();
       soundRecorderInstance = null;
     }
   };
+
+  // Register global functions and events.
+  window.startRecording = startRecordingFunction;
+  window.stopRecording = stopRecordingFunction;
+  window.addEventListener('beforeunload', stopRecordingFunction , false);
 })(this);
