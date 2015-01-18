@@ -12,13 +12,19 @@ app.use(serveStatic(global.serverRoot));
 // app.listen(global.serverPort);
 
 // Read and parse config file, path should be set in app.js.
-var sslOptionsString = fs.readFileSync(global.sslOptionsFile).toString();
-var sslOptions = JSON.parse(sslOptionsString);
+var sslConfigString = fs.readFileSync(global.sslConfigFile).toString();
+var sslConfig = JSON.parse(sslConfigString);
 
 // Throw error if options are not set correctly.
-if(!sslOptions || !sslOptions.key || !sslOptions.cert) {
+if(!sslConfig || !sslConfig.key || !sslConfig.cert) {
   throw Error('Failed to read SSL options.');
 }
+
+// Read SSL files using values from config.
+var sslOptions = {
+  key: fs.readFileSync(sslConfig.key),
+  cert: fs.readFileSync(sslConfig.cert),
+};
 
 https.createServer(sslOptions, app)
   .listen(global.serverPort, function() {

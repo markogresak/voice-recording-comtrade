@@ -21,7 +21,7 @@ global.binaryServerPort = 9001;
  *
  * @type {String}
  */
-global.sslOptionsFile = 'sslConfig.json';
+global.sslConfigFile = 'sslConfig.json';
 
 /**
  *  - server.js: serving static files inside `serverRoot` on port `serverPort`
