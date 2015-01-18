@@ -9,7 +9,7 @@ global.serverRoot = 'public';
  *
  * @type {Number}
  */
-global.serverPort = 3000;
+global.serverPort = 9876;
 /**
  * Port used by binary socket server.
  *
