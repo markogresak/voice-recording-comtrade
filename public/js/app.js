@@ -96,7 +96,20 @@
       initAudioContext();
     });
 
-    var PublicModule = {
+    /**
+     * [private] Reference to BinaryClient.
+     *
+     * @type {BinaryClient}
+     */
+    var client;
+
+    /**
+     * [private] handler function for client.open event.
+     * Defined globally to be used in both `start` and `stop`.
+     */
+    var clientOpenHandler;
+
+    var Public = {
       /**
        * Current recording state.
        *
@@ -114,12 +127,9 @@
        * Initializes and starts recording.
        */
       start: function() {
-        /**
-         * Start new WebSockets client on current server, at port 9001
-         *
-         * @type {BinaryClient}
-         */
-        var client = new BinaryClient('ws://' + location.hostname + ':9001');
+
+        //Start new WebSockets client on current server, at port 9001
+        client = new BinaryClient('ws://' + location.hostname + ':9001');
         var _this = this;
 
         /**
@@ -141,7 +151,7 @@
         /**
          * Handler for BinaryClient socket open event.
          */
-        function openHandler() {
+        clientOpenHandler = function () {
           // Use `initRecorder` promise.
           initRecorder
             .then(function(recorder) {
@@ -150,13 +160,14 @@
           }, function(err) {
             console.log('Error:', err);
           });
-        }
+        };
+
+        // Register event listener when WebSocket opens.
+        client.on('open', clientOpenHandler);
 
         // Set recording flag to true and initialize stream object.
-        _this.recording = true;
         _this.stream = client.createStream();
-        // Register event listener when WebSocket opens.
-        client.on('open', openHandler);
+        _this.recording = true;
       },
       /**
        * Stop the recorder.
@@ -166,11 +177,12 @@
         this.recording = false;
         if(this.stream) {
           this.stream.end();
+          client.off('open', clientOpenHandler);
         }
       }
     };
 
-    return PublicModule;
+    return Public;
   }());
 
   var soundRecorderInstance = null;
