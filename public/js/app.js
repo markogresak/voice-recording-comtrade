@@ -23,85 +23,96 @@
     }
 
     /**
+     * [Private] Recorder media stream, set when `getMediaSuccess` is called.
+     *
+     * @type {LocalMediaStream}
+     */
+    var _recorderMediaStream = null;
+
+    /**
      * Promise for initialization of SrAudioContext.
      *
      * @type {Promise}
      */
-    var initRecorder = new Promise(function(resolve, reject) {
-      /**
-       * If `navigator.getUserMedia` is not defined, sets a fallback value.
-       */
-      function initGetUserMedia() {
-        var n = navigator;
-        if (!n.getUserMedia) {
-          n.getUserMedia =  n.webkitGetUserMedia ||
-                            n.mozGetUserMedia ||
-                            n.msGetUserMedia;
+    var recorderPromise = function() {
+      return new Promise(function(resolve, reject) {
+        /**
+         * If `navigator.getUserMedia` is not defined, sets a fallback value.
+         */
+        function initGetUserMedia() {
+          if (!navigator.getUserMedia) {
+            navigator.getUserMedia =  navigator.webkitGetUserMedia ||
+                              navigator.mozGetUserMedia ||
+                              navigator.msGetUserMedia;
+          }
         }
-      }
 
-      /**
-       * Success event handler for `navigator.getUserMedia`.
-       *
-       * @param  {Event} e Data sent by `navigator.getUserMedia` on success.
-       */
-      function getMediaSuccess(e) {
-        // Initialize `AudioContext` or use fallback value.
-        var SrAudioContext = window.AudioContext || window.webkitAudioContext;
-        var context = new SrAudioContext();
-        // The sample rate is in `context.sampleRate`.
-        var audioInput = context.createMediaStreamSource(e);
-        var bufferSize = 2048;
-        // New recorder using bufferSize and single input and output channel.
-        var recorder = context.createScriptProcessor(bufferSize, 1, 1);
+        /**
+         * Success event handler for `navigator.getUserMedia`.
+         *
+         * @param  {Event} e Data sent by `navigator.getUserMedia` on success.
+         */
+        function getMediaSuccess(mediaStream) {
+          // Initialize `AudioContext` or use fallback value.
+          var SrAudioContext = window.AudioContext || window.webkitAudioContext;
+          var context = new SrAudioContext();
+          // The sample rate is in `context.sampleRate`.
+          var audioInput = context.createMediaStreamSource(mediaStream);
+          // Set global recorder media stream.
+          _recorderMediaStream = mediaStream;
+          var bufferSize = 2048;
+          // New recorder using bufferSize and single input and output channel.
+          var recorder = context.createScriptProcessor(bufferSize, 1, 1);
 
-        // Connect the recorder to `audioInput`.
-        audioInput.connect(recorder);
-        // Set the destination of audio context.
-        recorder.connect(context.destination);
-        resolve(recorder);
-      }
-
-      /**
-       * Error event handler for `navigator.getUserMedia`.
-       *
-       * @param  {Event} e Event sent when error occurs.
-       */
-      function getMediaError(e) {
-        // Error event handler.
-        console.log('Error capturing audio.');
-        console.log(e);
-        reject(e);
-      }
-
-      /**
-       * Initializes SrAudioContext, if it's available in current browser.
-       */
-      function initAudioContext() {
-        // Set fallback value to `navigator.getUserMedia` if it's not defined.
-        initGetUserMedia();
-
-        if (navigator.getUserMedia) {
-          // If `navigator.getUserMedia` is defined, start audio capture.
-          navigator.getUserMedia({audio: true}, getMediaSuccess, getMediaError);
+          // Connect the recorder to `audioInput`.
+          audioInput.connect(recorder);
+          // Set the destination of audio context.
+          recorder.connect(context.destination);
+          // Resolve the promise, passing the recorder object.
+          resolve(recorder);
         }
-        else {
-          // `navigator.getUserMedia` isn't defined, unable to capture audio.
-          console.log('getUserMedia not supported in this browser.');
-          alert('Unable to use audio recorder.');
-          reject(Error('getUserMedia not supported in this browser.'));
-        }
-      }
 
-      initAudioContext();
-    });
+        /**
+         * Error event handler for `navigator.getUserMedia`.
+         *
+         * @param  {Event} e Event sent when error occurs.
+         */
+        function getMediaErr(e) {
+          // Error event handler.
+          console.log('Error capturing audio.');
+          console.log(e);
+          // Reject the promise with error `e`.
+          reject(e);
+        }
+
+        /**
+         * Initializes SrAudioContext, if it's available in current browser.
+         */
+        (function initAudioContext() {
+          // Set fallback value to `navigator.getUserMedia` if it's not defined.
+          initGetUserMedia();
+
+          if (navigator.getUserMedia) {
+            // If `navigator.getUserMedia` is defined, start audio capture.
+            navigator.getUserMedia({audio: true}, getMediaSuccess, getMediaErr);
+          }
+          else {
+            // `navigator.getUserMedia` isn't defined, unable to capture audio.
+            console.log('getUserMedia not supported in this browser.');
+            alert('Unable to use audio recorder.');
+            // Reject the promise with error.
+            reject(Error('getUserMedia not supported in this browser.'));
+          }
+        })();
+      });
+    };
 
     /**
      * [private] Reference to BinaryClient.
      *
      * @type {BinaryClient}
      */
-    var client;
+    var clientPromise;
 
     /**
      * [private] handler function for client.open event.
@@ -110,18 +121,21 @@
     var clientOpenHandler;
 
     var Public = {
+
       /**
        * Current recording state.
        *
        * @type {Boolean}
        */
       recording: false,
+
       /**
        * BinaryClient stream object.
        *
        * @type {BinaryClient.Stream}
        */
       stream: null,
+
       /**
        * Start the recorder.
        * Initializes and starts recording.
@@ -129,7 +143,16 @@
       start: function() {
 
         //Start new WebSockets client on current server, at port 9001
-        client = new BinaryClient('ws://' + location.hostname + ':9001');
+        clientPromise = new Promise(function(resolve, reject) {
+          try {
+            resolve(new BinaryClient('ws://' + location.hostname + ':9001'));
+          }
+          catch (e) {
+            reject(e);
+          }
+        });
+
+        // Set reference of this (since functions override `this`).
         var _this = this;
 
         /**
@@ -153,7 +176,8 @@
          */
         clientOpenHandler = function () {
           // Use `initRecorder` promise.
-          initRecorder
+          // Runs the promise here, not as soon as the page is opened.
+          recorderPromise()
             .then(function(recorder) {
             // Set handler when audio data is recieved.
             recorder.onaudioprocess = writeAudioToStream;
@@ -162,13 +186,20 @@
           });
         };
 
-        // Register event listener when WebSocket opens.
-        client.on('open', clientOpenHandler);
-
-        // Set recording flag to true and initialize stream object.
-        _this.stream = client.createStream();
-        _this.recording = true;
+        clientPromise
+          .then(function(client) {
+            // Register event listener when WebSocket opens.
+            client.on('open', function() {
+              // Set recording flag to true and initialize stream object.
+              _this.stream = client.createStream();
+              _this.recording = true;
+              clientOpenHandler();
+            });
+          }, function(err) {
+            console.log('Error:', err);
+        });
       },
+
       /**
        * Stop the recorder.
        * Sets recording flag to false and ends the stream.
@@ -177,7 +208,16 @@
         this.recording = false;
         if(this.stream) {
           this.stream.end();
-          client.off('open', clientOpenHandler);
+          clientPromise
+            .then(function(client) {
+              client.off('open', clientOpenHandler);
+              if(_recorderMediaStream) {
+                _recorderMediaStream.stop();
+                _recorderMediaStream = null;
+              }
+            }, function(err) {
+              console.log('Error:', err);
+          });
         }
       }
     };
