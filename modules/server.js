@@ -26,6 +26,7 @@ var sslOptions = {
   cert: fs.readFileSync(sslConfig.cert)
 };
 
+// Start https server with `sslOptions` and connect config on `serverPort`.
 https.createServer(sslOptions, app)
   .listen(global.serverPort, function() {
     'use strict';
