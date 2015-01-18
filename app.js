@@ -16,6 +16,12 @@ global.serverPort = 9876;
  * @type {Number}
  */
 global.binaryServerPort = 9001;
+/**
+ * Path to file containing SSL config.
+ *
+ * @type {String}
+ */
+global.sslOptionsFile = 'sslConfig.json';
 
 /**
  *  - server.js: serving static files inside `serverRoot` on port `serverPort`
