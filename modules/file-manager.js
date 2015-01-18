@@ -1,7 +1,7 @@
 var fs = require('fs');
 
 var dir = './uploads';
-var indexFile = dir + '/index';
+var indexFile = dir + '/INDEX';
 var initialIndex = 10000;
 
 /**
@@ -78,7 +78,7 @@ function nextFilePath(baseName, extension) {
   }
   var doNotChangeFile = dir + '/DO_NOT_CHANGE_INDEX';
   if(!fs.existsSync(doNotChangeFile)) {
-    fs.writeFile(doNotChangeFile, 'Please don\'t change or remove index file.');
+    fs.writeFile(doNotChangeFile, 'Please don\'t change or remove INDEX file.');
   }
   // Create and init `indexFile` if it doesn't exist.
   if(!fs.existsSync(indexFile)) {
