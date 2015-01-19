@@ -13,6 +13,7 @@
      * @return {Int16Array}          Buffer converted to 16-bit int array.
      */
     function convertFloat32ToInt16(buffer) {
+      // At this time, `Float32Array.map` isn't supported in all browsers.
       var l = buffer.length;
       var buf = new Int16Array(l);
 
