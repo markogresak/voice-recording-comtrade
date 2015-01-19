@@ -145,7 +145,7 @@
         //Start new WebSockets client on current server, at port 9001
         clientPromise = new Promise(function(resolve, reject) {
           try {
-            resolve(new BinaryClient('ws://' + location.hostname + ':9001'));
+            resolve(new BinaryClient('wss://' + location.hostname + ':9001'));
           }
           catch (e) {
             reject(e);
