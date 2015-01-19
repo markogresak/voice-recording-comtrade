@@ -22,6 +22,12 @@ global.binaryServerPort = 9001;
  * @type {String}
  */
 global.sslConfigFile = 'sslConfig.json';
+/**
+ * SSL config data from `sslConfigFile`.
+ *
+ * @type {Object}
+ */
+global.sslOptions = require('./modules/read-ssl-config.js');
 
 /**
  *  - server.js: serving static files inside `serverRoot` on port `serverPort`

@@ -1,24 +1,7 @@
 var https = require('https'),
     BinaryServer = require('binaryjs').BinaryServer,
     wav = require('wav'),
-    fm = require('./file-manager.js'),
-    fs = require('fs');
-
-
-// Read and parse config file, path should be set in app.js.
-var sslConfigString = fs.readFileSync(global.sslConfigFile).toString();
-var sslConfig = JSON.parse(sslConfigString);
-
-// Throw error if options are not set correctly.
-if(!sslConfig || !sslConfig.key || !sslConfig.cert) {
-  throw Error('Failed to read SSL options.');
-}
-
-// Read SSL files using values from config.
-var sslOptions = {
-  key: fs.readFileSync(sslConfig.key),
-  cert: fs.readFileSync(sslConfig.cert)
-};
+    fm = require('./file-manager.js');
 
 /**
  * Https server using `sslOptions` from sslConfig.json,
@@ -26,7 +9,7 @@ var sslOptions = {
  *
  * @type {HttpsServer}
  */
-var httpsServer = https.createServer(sslOptions, function(req, res) {
+var httpsServer = https.createServer(global.sslOptions, function(req, res) {
   'use strict';
   // GET request, send head 200 and a generic message.
   res.writeHead(200);
